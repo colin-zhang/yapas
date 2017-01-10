@@ -1,0 +1,41 @@
+
+print "Begin"
+env = Environment()
+
+#----
+#Program('program', Glob('*.c'))
+#Program('program2', common_sources + ['program2.c'])
+#src_files = Split("""main.c
+#                     file2.c""")
+#Program('program', src_files)
+
+#src_files = Split('main.c file1.c file2.c')
+#Program(target = 'program', source = src_files)
+#----
+
+
+#common = ['common1.c', 'common2.c']
+#foo_files = ['foo.c'] + common
+#bar_files = ['bar1.c', 'bar2.c'] + common
+#Program('foo', foo_files)
+#Program('bar', bar_files)
+
+#----
+#SharedLibrary('foo', ['f1.c', 'f2.c', 'f3.c'])
+#StaticLibrary('foo', ['f1.c', 'f2.c', 'f3.c'])
+#----
+
+#Program('prog.c', LIBS=['foo', 'bar'], LIBPATH='.')
+
+#Object('hello.c', CCFLAGS='-DHELLO')
+#Object('goodbye.c', CCFLAGS='-DGOODBYE')
+#Program(['hello.o', 'goodbye.o'])
+
+#Program('hello.c', CPPPATH = ['include', '/home/project/inc'])
+
+Progress(['-\r', '\\\r', '|\r', '/\r'], interval=5)
+
+env = Environment(CCFLAGS = '-DFOO')
+print "CC is:", env['CC']
+
+env.Program("bit_tst", ["bitset.cc"])
