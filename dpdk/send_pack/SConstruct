@@ -11,6 +11,10 @@ libpath = install_path + '/lib'
 incpath = install_path + 'include'
 incpath_dpdk = install_path + 'include/dpdk'
 
+ccflag_sys = """
+-MD -MP -D_LINUX -D_UNIX -D_GNU_SOURCE
+"""
+
 dbdp_libs = """
 rte_eal pthread dl
 rte_ethdev rte_mempool 
@@ -18,7 +22,7 @@ rte_ethdev rte_mempool
 """
 
 env = Environment(
-        CCFLAGS = ['-DFOO', '-Wall', '--std=c++11', '-g', '-Wl,--whole-archive'], 
+        CCFLAGS = ['-m64', '-Wall', '--std=c++11', '-g', '-Wl,--whole-archive', Split(ccflag_sys)], 
         CPPPATH = [".", incpath, incpath_dpdk], 
         LIBPATH = [libpath],
         LIBS=     ['m', Split(dbdp_libs)]

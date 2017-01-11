@@ -2,6 +2,7 @@
 #include <iostream>
 #include "dpdk/rte_eal.h"
 #include "dpdk/rte_lcore.h"
+#include "rte_memcpy.h"
 #include "dpdk/rte_common.h"
 #include "dpdk/rte_ethdev.h"
 

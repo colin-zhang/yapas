@@ -5,6 +5,9 @@ set -e
 #gcc、gcc-c++、kernel-devel
 #yum install kernel-devel-$(uname -r)
 #
+#yum install vargrind
+#apt install oprofile
+#
 
 echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 
