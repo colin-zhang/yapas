@@ -1,0 +1,29 @@
+import os
+
+src_files = """
+send_pack.cc
+"""
+
+install_path = os.environ.get('DVLP_')
+print "install path is: " + install_path
+
+libpath = install_path + '/lib'
+incpath = install_path + 'include'
+incpath_dpdk = install_path + 'include/dpdk'
+
+dbdp_libs = """
+rte_eal pthread dl
+
+"""
+
+env = Environment(
+        CCFLAGS = ['-DFOO'], 
+        CPPPATH = [".", incpath, incpath_dpdk], 
+        LIBPATH = [libpath],
+        LIBS=     ['m', Split(dbdp_libs)]
+    )
+
+env.Program(target = 'send_pack', source = Split(src_files))
+
+
+print "CC is:", env['CC']
