@@ -1,18 +1,31 @@
 #include <cstdio>
+#include <iostream>
 #include "dpdk/rte_eal.h"
 #include "dpdk/rte_lcore.h"
+#include "dpdk/rte_common.h"
+#include "dpdk/rte_ethdev.h"
+
 
 
 int main(int argc, char *argv[])
 {
     int ret;
+    uint32_t nb_lcores, nb_sys_ports;
+
     ret = rte_eal_init(argc, argv);
-    if (ret < 0) printf("Cannot init EAL\n");
+
+    if (ret < 0) rte_exit(EXIT_FAILURE, "Invalid EAL parameters\n");
     argc -= ret;
     argv += ret;
 
-    /* Check if this application can use 1 core*/
-    ret = rte_lcore_count ();
-    if (ret != 1) printf("This application needs exactly 1 cores. \n");
+    nb_lcores = rte_lcore_count();
+
+    std::cout << "nb_lcores = " << nb_lcores << std::endl;
+    if (nb_lcores != 1) rte_exit(EXIT_FAILURE, "This application needs 1 core. \n");
+
+    nb_sys_ports = rte_eth_dev_count();
+    if (nb_sys_ports <= 0) rte_exit(EXIT_FAILURE, "Cannot find ETH devices\n");
+    
+
     return 0;
 }

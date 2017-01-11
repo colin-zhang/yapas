@@ -2,6 +2,8 @@
 set  -e
 
 INSTALL_DIR=${PWD}/../opt/local
+
+# T=i686-native-linuxapp-gcc for 32 bits
 DPDK_RTE_TARGET=x86_64-native-linuxapp-gcc
 
 

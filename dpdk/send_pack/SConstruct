@@ -13,17 +13,18 @@ incpath_dpdk = install_path + 'include/dpdk'
 
 dbdp_libs = """
 rte_eal pthread dl
+rte_ethdev rte_mempool 
 
 """
 
 env = Environment(
-        CCFLAGS = ['-DFOO'], 
+        CCFLAGS = ['-DFOO', '-Wall', '--std=c++11', '-g', '-Wl,--whole-archive'], 
         CPPPATH = [".", incpath, incpath_dpdk], 
         LIBPATH = [libpath],
         LIBS=     ['m', Split(dbdp_libs)]
     )
 
-env.Program(target = 'send_pack', source = Split(src_files))
+env.Program(target = 'send_pack', source = Split(src_files), variant_dir='debug')
 
 
-print "CC is:", env['CC']
+#print "CC is:", env['CC']
