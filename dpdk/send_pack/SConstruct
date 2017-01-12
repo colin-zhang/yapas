@@ -12,7 +12,7 @@ incpath = install_path + 'include'
 incpath_dpdk = install_path + 'include/dpdk'
 
 ccflag_sys = """
--MD -MP -D_LINUX -D_UNIX -D_GNU_SOURCE
+-m64 -march=native -pthread
 """
 
 dbdp_libs = """
@@ -29,6 +29,3 @@ env = Environment(
     )
 
 env.Program(target = 'send_pack', source = Split(src_files), variant_dir='debug')
-
-
-#print "CC is:", env['CC']

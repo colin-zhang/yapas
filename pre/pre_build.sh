@@ -13,7 +13,6 @@ if [ ! -d tmp ]; then
     mkdir tmp
 fi
 
-http://dpdk.org/browse/dpdk/tag/?h=v16.11-rc3
 
 if [ ! -f package/${DPDK_VERSION}.tar.xz ]; then
     wget http://fast.dpdk.org/rel/${DPDK_VERSION}.tar.xz -O package/${DPDK_VERSION}.tar.xz
@@ -21,4 +20,4 @@ fi
 
 tar xf package/${DPDK_VERSION}.tar.xz -C tmp
 
-make -C tmp/dpdk-stable-16.07.2  -j install T=${DPDK_RTE_TARGET} DESTDIR=${INSTALL_DIR} V=s 
+make -C tmp/${DPDK_VERSION} -j install T=${DPDK_RTE_TARGET} DESTDIR=${INSTALL_DIR} V=s 
