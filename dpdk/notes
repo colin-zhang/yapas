@@ -1,0 +1,9 @@
+16.11 need to modify
+#define PCI_PRI_FMT "%.4" PRIx16 ":%.2" PRIx8 ":%.2" PRIx8 ".%" PRIx8
+
+#define PCI_PRI_FMT "%.4x:%.2x:%.2x.%x"
+
+
+#install pip
+sudo yum -y install epel-release
+sudo yum -y install python-pip
