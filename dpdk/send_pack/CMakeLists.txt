@@ -10,11 +10,11 @@ file(GLOB SOURCES
 set(DPDK_RTE_TARGET x86_64-native-linuxapp-gcc)
 
 include_directories(
-  $ENV{RTE_SDK}/${DPDK_RTE_TARGET}/include
+  $ENV{DVLP_}/include/dpdk
   src/
   )
 
-link_directories($ENV{RTE_SDK}/${DPDK_RTE_TARGET}/lib)
+link_directories($ENV{DVLP_}/lib)
 
 set(DPDK_DRIVERS
   "-lrte_pmd_ixgbe -lrte_pmd_vmxnet3_uio -lrte_pmd_e1000"
@@ -22,7 +22,7 @@ set(DPDK_DRIVERS
 
 set(DPDK_LIBS
   "-Wl,--whole-archive"
-  "-lrte_eal -lrte_mempool -lrte_mbuf -lrte_ring -lrte_ethdev  ${DPDK_DRIVERS}"
+  "-ldpdk"
   "-Wl,--no-whole-archive"
   )
 
@@ -40,4 +40,4 @@ endif(DPI_DEBUG)
 add_executable(${PRJ} ${SOURCES})
 #add_subdirectory(test)
 target_link_libraries(${PRJ} ${DPDK_LIBS})
-target_link_libraries(${PRJ} pthread dl )
+target_link_libraries(${PRJ} pthread dl m)

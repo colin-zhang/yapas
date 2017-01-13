@@ -8,24 +8,25 @@ install_path = os.environ.get('DVLP_')
 print "install path is: " + install_path
 
 libpath = install_path + '/lib'
-incpath = install_path + 'include'
-incpath_dpdk = install_path + 'include/dpdk'
+incpath = install_path + '/include'
+incpath_dpdk = install_path + '/include/dpdk'
 
 ccflag_sys = """
--m64 -march=native -pthread
+-mssse3
 """
 
 dbdp_libs = """
-rte_eal pthread dl
-rte_ethdev rte_mempool 
-
+dpdk  
+pthread dl
 """
 
 env = Environment(
-        CCFLAGS = ['-m64', '-Wall', '--std=c++11', '-g', '-Wl,--whole-archive', Split(ccflag_sys)], 
+        CCFLAGS = ['-m64', '-Wall', '--std=c++11', '-g', '-Wl,--no-whole-archive', Split(ccflag_sys)], 
         CPPPATH = [".", incpath, incpath_dpdk], 
         LIBPATH = [libpath],
         LIBS=     ['m', Split(dbdp_libs)]
     )
 
-env.Program(target = 'send_pack', source = Split(src_files), variant_dir='debug')
+#'-Wl,--whole-archive'
+
+env.Program(target = 'send_pack', source = Split(src_files))
