@@ -1,22 +1,18 @@
-CC=gcc
-RTE_SDK=/opt/yapas/pre/tmp/dpdk-16.11
-LIBS=-lrte_eal -lpthread -ldl -lrte_ethdev -lrte_mempool
+CC=g++
+LIBS= -lpthread -ldl -lm  -Wl,--whole-archive -ldpdk -Wl,--no-whole-archive
 
-#CC_OPTS = -Wall -Werror -lev -ggdb3 -I./include
-CC_OPTS = -I$(RTE_SDK)/x86_64-native-linuxapp-gcc/include -m64 -march=native -pthread
-LD_OPTS = -L$(RTE_SDK)/x86_64-native-linuxapp-gcc/lib $(LIBS)
-
-#-mssse3
+#CCOPTS = -Wall -Werror -lev -ggdb3 -I./include
+#-mssse3 -mssse4
+CC_OPTS = -I$(DVLP_)/include/dpdk -m64 -march=native -pthread --std=c++11
+LD_OPTS = -L$(DVLP_)/lib $(LIBS)
 
 all: send_pack
-
 
 send_pack: send_pack.o
 	$(CC) $(LD_OPTS) -o $@ $<
 
-send_pack.o: send_pack.c
-	$(CC) $(CC_OPTS) -o $@ -c $<
-
+send_pack.o: send_pack.cc
+	$(CC) $< $(CC_OPTS) -o $@ -c
 
 clean:
 	rm -rf *.o send_pack
