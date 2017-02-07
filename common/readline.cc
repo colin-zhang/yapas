@@ -16,8 +16,8 @@ class CmdLine
         ~CmdLine();
         void init();
         std::string readLine();
-		void backSpace(int n);
-		void clearLine();
+        void backSpace(int n);
+        void clearLine();
     private:
         struct termios tty_atrr;
         std::vector <std::string> history; 
@@ -57,15 +57,15 @@ void CmdLine::init()
 
 void CmdLine::backSpace(int n) 
 {
-	int i;
-	for (i = 0; i < n; i++) {
-		char b = '\b';
+    int i;
+    for (i = 0; i < n; i++) {
+        char b = '\b';
         write(out_fd, &b, 1);
         b = ' ';
         write(out_fd, &b, 1);
-		b = '\b';
+        b = '\b';
         write(out_fd, &b, 1);
-	}	
+}
 }
 
 string CmdLine::readLine()
@@ -89,7 +89,7 @@ string CmdLine::readLine()
         if (!cmd.empty()) {
             cmd.erase(cmd.end() - 1);
         }
-		backSpace(1);
+        backSpace(1);
     } else if (c == 0x1B) {
        char b[2];
        int len = read(in_fd, b, sizeof(b));
