@@ -7,17 +7,21 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 class CmdLine
 {
     public:
         CmdLine();
         ~CmdLine();
         void init();
-        void readline();
-		void backspace(int n);
+        std::string readLine();
+		void backSpace(int n);
+		void clearLine();
     private:
         struct termios tty_atrr;
         std::vector <std::string> history; 
+        vector<string>::iterator curr;
         std::string cmd;
         char c;
         int in_fd;
@@ -36,6 +40,11 @@ CmdLine::~CmdLine()
 
 }
 
+void CmdLine::clearLine()
+{
+    backSpace(cmd.size());
+}
+
 void CmdLine::init()
 {
     struct termios tty_attr;
@@ -46,7 +55,7 @@ void CmdLine::init()
     tcsetattr(in_fd, TCSANOW, &tty_attr);
 }
 
-void CmdLine::backspace(int n) 
+void CmdLine::backSpace(int n) 
 {
 	int i;
 	for (i = 0; i < n; i++) {
@@ -59,8 +68,9 @@ void CmdLine::backspace(int n)
 	}	
 }
 
-void CmdLine::readline()
+string CmdLine::readLine()
 {
+    string res("");
     int len = read(in_fd, &c, 1); 
 /*
     switch (c)
@@ -70,15 +80,38 @@ void CmdLine::readline()
         
     }
 */
-    if (c == 127) {
-		backspace(1);
+    if (c == '\n') {
+        res = string(cmd);
+        history.push_back(cmd);
+        cmd.clear();
+        write(out_fd, &c, 1);
+    } else if (c == 127) {
+        if (!cmd.empty()) {
+            cmd.erase(cmd.end() - 1);
+        }
+		backSpace(1);
+    } else if (c == 0x1B) {
+       char b[2];
+       int len = read(in_fd, b, sizeof(b));
+       if (b[0] == 0x5B && b[1] == 0x41) {
+            printf("up\n");
+            fflush(stdout);
+       } else  if (b[0] == 0x5B && b[1] == 0x42) {
+            printf("down\n");
+            fflush(stdout);
+       } else {
+            printf("\n%02x, %02x", b[0], b[1]);
+            fflush(stdout);
+       }
+    } else if (isprint(c)) {
+        write(out_fd, &c, 1);
+        cmd.push_back(c);
     } else {
-        //write(out_fd, &c, 1);
-        printf("\n%02x", c);
+        //printf("\n%02x", c);
         fflush(stdout);
     }
-    
     fsync(out_fd);
+    return res;
 }
 
 int main()
@@ -88,7 +121,13 @@ int main()
     std::cout << a << std::endl;
     CmdLine cmd;
     while (1) {
-        cmd.readline();
+        string c;
+        c = cmd.readLine();
+        if (c.size() > 0) {
+            //std::cout << c << std::endl;
+            printf("%s \n", c.c_str());
+            fflush(stdout);
+        }
     }
 
 }
