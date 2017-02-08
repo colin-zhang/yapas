@@ -7,8 +7,22 @@
 #include <fcntl.h>
 #include <string>
 #include <vector>
+#include <set>
 
 using namespace std;
+
+class HintCompare 
+{
+public:
+    bool operator() (const string &a, const string &b) const {
+        int n = b.size() > a.size() ? a.size() : b.size();
+        if (strncmp(a.c_str(), b.c_str(), n) < 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
 
 class CmdLine
 {
@@ -20,11 +34,13 @@ public:
     string readLine();
     void backSpace(int n);
     void clearLine();
-    void writeLine(string &buf);
+    void writeLine(string buf);
+    void addHints(string hint);
 private:
     struct termios old_tty_atrr;
     vector <string> history; 
     vector<string>::iterator curr;
+    set<string, HintCompare> hints;
     string prompt;
     string cmd;
     char c;
@@ -56,12 +72,17 @@ CmdLine::~CmdLine()
     tcsetattr(in_fd, TCSANOW, &old_tty_atrr);
 }
 
+void CmdLine::addHints(string hint)
+{
+    hints.insert(hint);
+}
+
 void CmdLine::clearLine()
 {
     backSpace(cmd.size());
 }
 
-void CmdLine::writeLine(string &buf)
+void CmdLine::writeLine(string buf)
 {
     write(out_fd, buf.c_str(), buf.size());
     //fsync(out_fd);
@@ -114,6 +135,15 @@ string CmdLine::readLine()
         }
         res = string(cmd);
         cmd.clear();
+    } else if (c == '\t') {
+        //printf("tab \n");
+        //fflush(stdout);
+        set<string, HintCompare>::iterator it = hints.find(cmd);
+        if (it != hints.end()) {
+            clearLine();
+            writeLine(*it);
+            cmd = *it;
+        }
     } else if (c == 127) {
         if (!cmd.empty()) {
             cmd.erase(cmd.end() - 1);
@@ -161,6 +191,8 @@ int main()
     a = isatty(0);
     std::cout << a << std::endl;
     CmdLine cmd;
+    cmd.addHints("help");
+    cmd.addHints("ls");
     while (1) {
         string c;
         c = cmd.readLine();
