@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <stdint.h>
+#include <string.h>
 #include <pthread.h>
 #include <sys/time.h>
 
@@ -55,6 +56,13 @@ public:
     ~StatisticsQueue() {
         pthread_mutex_destroy(&_mu);
         delete[] v;
+    }
+
+    void clean(void) {
+        pthread_mutex_lock(&_mu);
+        memset(v, 0, sizeof(T) * _size);
+        printf("sizeof T = %d \n", sizeof(T));
+        pthread_mutex_unlock(&_mu);
     }
 
     bool isFull(void) {

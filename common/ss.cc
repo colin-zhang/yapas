@@ -94,7 +94,8 @@ int main()
         printf("%s\n", "hehe");
     }
 
-
+    mst.sq.clean();
+    printf("sizeof myST = %d \n", sizeof(myST));
 #endif
 }
 

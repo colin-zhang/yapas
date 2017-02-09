@@ -144,7 +144,7 @@ string CmdLine::readLine()
             writeLine(*it);
             cmd = *it;
         }
-    } else if (c == 127) {
+    } else if (c == 127 || c == 8) {
         if (!cmd.empty()) {
             cmd.erase(cmd.end() - 1);
             backSpace(1);
