@@ -75,7 +75,7 @@ void CmdLine::backSpace(int n)
     delete []b;
 }
 
-int  CmdLine::compareHints(std::string* possible)
+int  CmdLine::compareHints(std::string* possible, std::string* append_str)
 {   
     int most_len = 65535;
     std::vector<string> common;
@@ -115,7 +115,7 @@ int  CmdLine::compareHints(std::string* possible)
             break;
         }
     }
-    cmd.append(common_str);
+    append_str->append(common_str);
     return common.size();
 }
 
@@ -136,19 +136,25 @@ string CmdLine::readLine()
         cmd.clear();
     } else if (c == '\t') {
         int count = 0;
-        string possible_cmd;
-        count = compareHints(&possible_cmd);
-        if (count > 1 && last_key == c && last_time == time(NULL)) {
+        string possible_cmd, append_str;
+        possible_cmd.clear();
+        append_str.clear();
+        count = compareHints(&possible_cmd, &append_str);
+        if (count > 1 && last_key == c ) {
             possible_cmd.insert(0, "\n");
             possible_cmd.append("\n");
             writeLine(possible_cmd);
             writeLine(prompt);
+            cmd.append(append_str);
             writeLine(cmd);
             //cmd.clear();
         } else if (1 == count) {
             clearLine();
             writeLine(possible_cmd);
             cmd = possible_cmd;
+            last_key = 0;
+        } else {
+            //last_key = 0;
         }
         //set<string, HintCompare>::iterator it = hints.find(cmd);
 /*        if (it != hints.end()) {
@@ -196,7 +202,6 @@ string CmdLine::readLine()
         //fflush(stdout);
     }
     last_key = c;
-    last_time = time(NULL);
     //fsync(out_fd);
     return res;
 }

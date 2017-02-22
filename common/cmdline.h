@@ -37,7 +37,7 @@ public:
     void clearLine();
     void writeLine(std::string& buf);
     void addHints(std::string& hint);
-    int  compareHints(std::string* possible);
+    int  compareHints(std::string* possible, std::string* append_str);
 private:
     struct termios old_tty_atrr;
     std::vector <std::string> history; 
@@ -50,7 +50,6 @@ private:
     int in_fd;
     int out_fd;
     char last_key;
-    int  last_time;
 };
 
 #endif
