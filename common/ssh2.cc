@@ -65,7 +65,7 @@ int SshSession::connect()
 
     rc = getaddrinfo(m_host.c_str(), port_str, &ai_hints, &result);
     if (rc || !result) {
-        close(m_sock);
+        ::close(m_sock);
         return -1;
     }
 
