@@ -17,16 +17,18 @@ class SshChannel
 public:
     enum Type {
         kChannelExeCommand,
+        kChannelShell,
         kChannelScpSend,
         kChannelScpReceive,
     };
 public:
     SshChannel(LIBSSH2_CHANNEL* channel);
     SshChannel(LIBSSH2_SESSION *session);
+	SshChannel(LIBSSH2_SESSION *session, SshChannel::Type type);
     ~SshChannel();
     int read(char* buffer, int buffer_len);
     int readStderr(char* buffer, int buffer_len);
-    int write(char* buffer, int buffer_len);
+    int write(const char* buffer, int buffer_len);
     int poll(int ms);
     void setEnv(const char* name, const char* value) {
         libssh2_channel_setenv(m_channel, name, value);
@@ -57,6 +59,7 @@ public:
     int auth(const char* user, const char* passwd);
     int waitSocket(int ms);
     SshChannel* startChannel(const char* command);
+	SshChannel* startChannelShell();
     SshChannel* startChannelScpGet(std::string& scppath, struct stat* fileinfo);
     SshChannel* startChannelScpPost(std::string& scppath, int file_size, int mode);
 

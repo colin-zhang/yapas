@@ -132,8 +132,7 @@ SshChannel* SshSession::startChannel(const char* command)
     LIBSSH2_CHANNEL* channel;
     SshChannel* ssh_channel = NULL;
 
-    ssh_channel = new SshChannel(m_session);
-    ssh_channel->setType(SshChannel::kChannelExeCommand);
+    ssh_channel = new SshChannel(m_session, SshChannel::kChannelExeCommand);
     ssh_channel->setBlocking(1);
 
     while ((rc = ssh_channel->exe(command)) == LIBSSH2_ERROR_EAGAIN) {
@@ -144,6 +143,17 @@ SshChannel* SshSession::startChannel(const char* command)
         std::cerr << "ssh channel error " << std::endl;
         return NULL;
     }
+    return ssh_channel;
+}
+
+SshChannel* SshSession::startChannelShell()
+{
+    int rc;
+    LIBSSH2_CHANNEL* channel;
+    SshChannel* ssh_channel = NULL;
+
+    ssh_channel = new SshChannel(m_session, SshChannel::kChannelShell);
+    ssh_channel->setBlocking(1);
     return ssh_channel;
 }
 
@@ -186,14 +196,26 @@ SshChannel::SshChannel(LIBSSH2_CHANNEL* channel)
     m_channel = channel;
 }
 
-SshChannel::SshChannel(LIBSSH2_SESSION *session)
+SshChannel::SshChannel(LIBSSH2_SESSION *session, SshChannel::Type type)
 {
     LIBSSH2_CHANNEL* channel;
     while ((channel = libssh2_channel_open_session(session)) == NULL &&
                 libssh2_session_last_error(session, NULL, NULL, 0) == LIBSSH2_ERROR_EAGAIN) {
         //waitsocket(m_sock, m_session);
     }
+	if (SshChannel::kChannelShell == type) {
+		if (libssh2_channel_request_pty(channel, "shell")) {
+			libssh2_channel_free(channel);
+			throw "pty error";
+		}
+		/* Open a SHELL on that pty */
+		if (libssh2_channel_shell(channel)) {
+			libssh2_channel_free(channel);
+			throw "shell error";
+		}
+	}
     m_channel = channel;
+    m_type = type;
 }
 
 SshChannel::~SshChannel() 
@@ -258,10 +280,11 @@ int SshChannel::read(char* buffer, int buffer_len)
     return rc;
 }
 
-int SshChannel::write(char* buffer, int buffer_len)
+int SshChannel::write(const char* buffer, int buffer_len)
 {
     int rc;
-    rc = libssh2_channel_write(m_channel, buffer, buffer_len);
+    //rc = libssh2_channel_write(m_channel, buffer, buffer_len);
+    rc = libssh2_channel_write_ex(m_channel, 0, buffer, buffer_len);
     return rc;
 }
 
