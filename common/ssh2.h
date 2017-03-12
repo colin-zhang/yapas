@@ -6,12 +6,6 @@
 
 namespace yapas {
 
-class LibSsh2 {
-public:
-    static void init();
-    static void exit();
-};
-
 class SshChannel
 {
 public:
@@ -50,6 +44,30 @@ private:
     Type m_type;
 };
 
+class SshChannelScp : public SshChannel
+{
+public:
+    static const int SEND = 0;
+    static const int RECEIVE = 1;
+public:
+    SshChannelScp(LIBSSH2_CHANNEL* channel, std::string& scppath, std::string& local_path, int sr)
+        : SshChannel(channel) {
+        if (sr) {
+            setType(SshChannel::kChannelScpReceive);
+        } else {
+            setType(SshChannel::kChannelScpSend);
+        }
+        m_rpath = scppath;
+        m_lpath = local_path;
+    }
+    int transfer();
+public:
+    struct stat m_fileinfo;
+private:
+    std::string m_rpath;
+    std::string m_lpath;
+};
+
 class SshSession
 {
 public:
@@ -58,13 +76,10 @@ public:
     int connect();
     int auth(const char* user, const char* passwd);
     int waitSocket(int ms);
-    SshChannel* startChannel(const char* command);
+    SshChannel* startChannelCmd(const char* command);
 	SshChannel* startChannelShell();
-    SshChannel* startChannelScpGet(std::string& scppath, struct stat* fileinfo);
-    SshChannel* startChannelScpPost(std::string& scppath, int file_size, int mode);
-
-    //SshChannel* startChannelScpSend(const char* command);
-    //SshChannel* startChannelScpReceive(const char* command);
+    SshChannelScp* startChannelScpGet(std::string& scppath, std::string& local_path);
+    SshChannelScp* startChannelScpPost(std::string& local_path, std::string& scppath, int mode = 0777);
 private:
     LIBSSH2_SESSION* m_session;
     std::string m_host;
@@ -72,7 +87,14 @@ private:
     int m_sock;
 };
 
-
+class LibSsh2 {
+public:
+    static void init();
+    static void exit();
+    static const char* version() {
+        return libssh2_version(0);
+    }
+};
 
 
 }

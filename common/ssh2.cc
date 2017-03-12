@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include "ssh2.h"
 
@@ -109,9 +110,7 @@ int SshSession::waitSocket(int ms)
     timeout.tv_usec = (ms % 1000) * 1000;
 
     FD_ZERO(&fd);
-
     FD_SET(m_sock, &fd);
-
     /* now make sure we wait in the correct direction */
     dir = libssh2_session_block_directions(m_session);
 
@@ -122,11 +121,10 @@ int SshSession::waitSocket(int ms)
         writefd = &fd;
 
     rc = ::select(m_sock + 1, readfd, writefd, NULL, &timeout);
-
     return rc;
 }
 
-SshChannel* SshSession::startChannel(const char* command)
+SshChannel* SshSession::startChannelCmd(const char* command)
 {
     int rc;
     LIBSSH2_CHANNEL* channel;
@@ -157,27 +155,31 @@ SshChannel* SshSession::startChannelShell()
     return ssh_channel;
 }
 
-SshChannel* SshSession::startChannelScpGet(std::string& scppath, struct stat* fileinfo)
+SshChannelScp* SshSession::startChannelScpGet(std::string& scppath, std::string& local_path)
 {
     LIBSSH2_CHANNEL* channel;
-    SshChannel* ssh_channel = NULL;
+    SshChannelScp* ssh_channel = NULL;
+    struct stat fileinfo;
 
-    channel = libssh2_scp_recv(m_session, scppath.c_str(), fileinfo);
+    channel = libssh2_scp_recv(m_session, scppath.c_str(), &fileinfo);
     if (!channel) {
         std::cerr << "Unable to open a session: " << libssh2_session_last_errno(m_session);
         return NULL;
     }
-    ssh_channel = new SshChannel(channel);
-    ssh_channel->setType(SshChannel::kChannelScpReceive);
+    ssh_channel = new SshChannelScp(channel, scppath, local_path, SshChannelScp::RECEIVE);
     ssh_channel->setBlocking(1);
+    ssh_channel->m_fileinfo = fileinfo;
     return ssh_channel;
 }
 
-SshChannel* SshSession::startChannelScpPost(std::string& scppath, int file_size, int mode)
+SshChannelScp* SshSession::startChannelScpPost(std::string& local_path, std::string& scppath, int mode)
 {
     LIBSSH2_CHANNEL* channel;
-    SshChannel* ssh_channel = NULL;
-    channel = libssh2_scp_send(m_session, scppath.c_str(), mode, (unsigned long)file_size);
+    SshChannelScp* ssh_channel = NULL;
+    struct stat fileinfo;
+
+    stat(local_path.c_str(), &fileinfo);
+    channel = libssh2_scp_send(m_session, scppath.c_str(), mode, (unsigned long)fileinfo.st_size);
     if (!channel) {
         char *errmsg;
         int errlen;
@@ -185,9 +187,9 @@ SshChannel* SshSession::startChannelScpPost(std::string& scppath, int file_size,
         std::cerr << "Unable to open a session: " << err << " " << errmsg << std::endl;
         return NULL;
     }
-    ssh_channel = new SshChannel(channel);
-    ssh_channel->setType(SshChannel::kChannelScpSend);
+    ssh_channel = new SshChannelScp(channel, scppath, local_path, SshChannelScp::SEND);
     ssh_channel->setBlocking(1);
+    ssh_channel->m_fileinfo = fileinfo;
     return ssh_channel;
 }
 
@@ -245,6 +247,8 @@ int SshChannel::finish()
     if (m_type == kChannelScpSend) {
         libssh2_channel_send_eof(m_channel);
         libssh2_channel_wait_eof(m_channel);
+    } else {
+        return 0;
     }
 
     while((exitcode = libssh2_channel_close(m_channel)) == LIBSSH2_ERROR_EAGAIN) {
@@ -283,8 +287,21 @@ int SshChannel::read(char* buffer, int buffer_len)
 int SshChannel::write(const char* buffer, int buffer_len)
 {
     int rc;
+    int len = buffer_len;
     //rc = libssh2_channel_write(m_channel, buffer, buffer_len);
-    rc = libssh2_channel_write_ex(m_channel, 0, buffer, buffer_len);
+    //rc = libssh2_channel_write_ex(m_channel, 0, buffer, buffer_len);
+    do {
+        /* write the same data over and over, until error or completion */ 
+        rc = libssh2_channel_write(m_channel, buffer, len);
+        if (rc < 0) {
+            std::cerr << "ERROR:" << rc << std::endl;
+            break;
+        }
+        else {
+            buffer += rc;
+            len -= rc;
+        }
+    } while (len);
     return rc;
 }
 
@@ -308,6 +325,48 @@ int SshChannel::poll(int ms)
         return 1;
     // time out 
     return 0;
+}
+
+int SshChannelScp::transfer()
+{
+    int ret;
+    int buffer_len = m_fileinfo.st_size > 6400*1000 ? 6400*1000 : m_fileinfo.st_size;
+    char* buffer = new char[buffer_len];
+
+    if (kChannelScpReceive == getType()) {
+        std::ofstream out(m_lpath.c_str(), std::ofstream::out|std::ofstream::binary); 
+        int got = 0;
+        while (got < m_fileinfo.st_size) {
+            int amount =  buffer_len;
+            if ((m_fileinfo.st_size - got) < amount) {
+                amount = (int)(m_fileinfo.st_size - got);
+            }
+            memset(buffer, 0, buffer_len);
+            ret = this->read(buffer, amount);
+            if (ret >= 0) {
+                out.write (buffer, ret);
+            }
+            //std::cout << buffer << "ret = " << ret << std::endl;
+        #ifdef DEBUG
+            std::cout << "got = " << got << std::endl;
+        #endif
+            got  += ret;
+        }
+        out.close();
+    } else if (kChannelScpSend) {
+        std::ifstream ins(m_lpath.c_str(), std::ifstream::binary);
+        do {
+            int got = 0;
+            got = ins.readsome(buffer, buffer_len);
+            if (got <= 0) {
+                /* end of file */ 
+                break;
+            }
+            ret = this->write(buffer, got);
+        } while (1);
+    }
+    delete buffer;
+    return ret;
 }
 
 } //end namespace yapas
