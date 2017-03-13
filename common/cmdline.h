@@ -36,7 +36,7 @@ public:
     void backSpace(int n);
     void clearLine();
     void writeLine(std::string& buf);
-    void addHints(std::string& hint);
+    void addHints(std::string hint);
     int  compareHints(std::string* possible, std::string* append_str);
 private:
     struct termios old_tty_atrr;
@@ -46,6 +46,7 @@ private:
     std::vector<std::string> hints;
     std::string prompt;
     std::string cmd;
+    std::string cmd_buffer;
     char c;
     int in_fd;
     int out_fd;

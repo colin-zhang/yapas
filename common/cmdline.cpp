@@ -1,4 +1,4 @@
-#include "access_cmdline.h"
+#include "cmdline.h"
 
 using namespace std;
 
@@ -15,6 +15,7 @@ CmdLine::CmdLine(const char *prompt_cstr)
     in_fd = STDIN_FILENO;
     out_fd = STDOUT_FILENO;
     prompt = string(prompt_cstr);
+    cmd_buffer = "";
     init();
     //int flags = fcntl(in_fd, F_GETFL, 0);  
     //fcntl(in_fd, F_SETFL, flags | O_NONBLOCK);
@@ -25,7 +26,7 @@ CmdLine::~CmdLine()
     tcsetattr(in_fd, TCSANOW, &old_tty_atrr);
 }
 
-void CmdLine::addHints(string& hint)
+void CmdLine::addHints(string hint)
 {
     std::vector<string>::iterator it;
     for (it = hints.begin(); it != hints.end(); it++) {
@@ -60,6 +61,8 @@ void CmdLine::init()
     tty_attr.c_cc[VMIN] = 1;
     tcsetattr(in_fd, TCSANOW, &tty_attr);
     writeLine(prompt);
+    history.push_back("help");
+    curr = history.end();
 }
 
 void CmdLine::backSpace(int n) 
@@ -126,14 +129,18 @@ string CmdLine::readLine()
 
     if (c == '\n') {
         write(out_fd, &c, 1);
+        cmd.erase(0, cmd.find_first_not_of(" "));
         if (cmd.empty()) {
             writeLine(prompt);
-        } else {
+        } else if (*(history.end()-1) != cmd){
             history.push_back(cmd);
-            curr = history.end() - 1;
+            curr = history.end();
+        } else {
+            curr = history.end();
         }
         res = string(cmd);
         cmd.clear();
+        cmd_buffer.clear();
     } else if (c == '\t') {
         int count = 0;
         string possible_cmd, append_str;
@@ -174,16 +181,26 @@ string CmdLine::readLine()
        int len = read(in_fd, b, sizeof(b));
        if (b[0] == 0x5B && b[1] == 0x41 && history.size() > 0) {
             //up arrow
-            clearLine();
-            writeLine(*curr);
-            cmd = string(*curr);
             if (curr == history.begin()) {
             } else {
                 curr--;
+                if (*curr == cmd && curr != history.begin()) {
+                   curr--; 
+                }
             }
+            clearLine();
+            writeLine(*curr);
+            cmd = string(*curr);
        } else  if (b[0] == 0x5B && b[1] == 0x42 && history.size() > 0) {
             //down arrow
-            if (curr == history.end() - 1) {
+            if (curr == history.end()) {
+            } else if (curr == history.end() - 1) {
+                if (cmd_buffer.size() != 0) {
+                    clearLine();
+                    writeLine(cmd_buffer);
+                    cmd = cmd_buffer;
+                }
+                curr++;
             } else {
                 curr++;
                 clearLine();
@@ -197,6 +214,7 @@ string CmdLine::readLine()
     } else if (isprint(c)) {
         write(out_fd, &c, 1);
         cmd.push_back(c);
+        cmd_buffer = cmd;
     } else {
         //printf("\n%02x", c);
         //fflush(stdout);
