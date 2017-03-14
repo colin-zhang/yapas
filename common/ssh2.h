@@ -10,6 +10,7 @@ class SshChannel
 {
 public:
     enum Type {
+        kChannelUnknow,
         kChannelExeCommand,
         kChannelShell,
         kChannelScpSend,
@@ -17,8 +18,8 @@ public:
     };
 public:
     SshChannel(LIBSSH2_CHANNEL* channel);
-    SshChannel(LIBSSH2_SESSION *session);
-	SshChannel(LIBSSH2_SESSION *session, SshChannel::Type type);
+    SshChannel(LIBSSH2_SESSION* session);
+    SshChannel(LIBSSH2_SESSION* session, SshChannel::Type type);
     ~SshChannel();
     int read(char* buffer, int buffer_len);
     int readStderr(char* buffer, int buffer_len);
@@ -77,7 +78,7 @@ public:
     int auth(const char* user, const char* passwd);
     int waitSocket(int ms);
     SshChannel* startChannelCmd(const char* command);
-	SshChannel* startChannelShell();
+    SshChannel* startChannelShell();
     SshChannelScp* startChannelScpGet(std::string& scppath, std::string& local_path);
     SshChannelScp* startChannelScpPost(std::string& local_path, std::string& scppath, int mode = 0777);
 private:
@@ -95,7 +96,6 @@ public:
         return libssh2_version(0);
     }
 };
-
 
 }
 

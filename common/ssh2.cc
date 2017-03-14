@@ -32,6 +32,7 @@ SshSession::SshSession(const char* host, uint16_t port)
     assert(m_session != NULL);
     m_host = std::string(host);
     m_port = port;
+    m_sock = -1;
 }
 
 SshSession::~SshSession()
@@ -52,8 +53,7 @@ int SshSession::connect()
         std::cerr << "socket error," << strerror(errno) << std::endl;
         return -1;
     }
-    //nonblocking(m_fd);
-    //keepalive(m_fd);
+    
     memset(&ai_hints, 0, sizeof(struct addrinfo));
     ai_hints.ai_family   = AF_UNSPEC;
     ai_hints.ai_socktype = SOCK_STREAM;
@@ -127,7 +127,6 @@ int SshSession::waitSocket(int ms)
 SshChannel* SshSession::startChannelCmd(const char* command)
 {
     int rc;
-    LIBSSH2_CHANNEL* channel;
     SshChannel* ssh_channel = NULL;
 
     ssh_channel = new SshChannel(m_session, SshChannel::kChannelExeCommand);
@@ -146,8 +145,6 @@ SshChannel* SshSession::startChannelCmd(const char* command)
 
 SshChannel* SshSession::startChannelShell()
 {
-    int rc;
-    LIBSSH2_CHANNEL* channel;
     SshChannel* ssh_channel = NULL;
 
     ssh_channel = new SshChannel(m_session, SshChannel::kChannelShell);
@@ -163,7 +160,7 @@ SshChannelScp* SshSession::startChannelScpGet(std::string& scppath, std::string&
 
     channel = libssh2_scp_recv(m_session, scppath.c_str(), &fileinfo);
     if (!channel) {
-        std::cerr << "Unable to open a session: " << libssh2_session_last_errno(m_session);
+        std::cerr << "Unable to open a session: " << libssh2_session_last_errno(m_session) << std::endl;
         return NULL;
     }
     ssh_channel = new SshChannelScp(channel, scppath, local_path, SshChannelScp::RECEIVE);
@@ -194,6 +191,7 @@ SshChannelScp* SshSession::startChannelScpPost(std::string& local_path, std::str
 }
 
 SshChannel::SshChannel(LIBSSH2_CHANNEL* channel)
+    : m_type(SshChannel::kChannelUnknow)
 {
     m_channel = channel;
 }
@@ -365,7 +363,7 @@ int SshChannelScp::transfer()
             ret = this->write(buffer, got);
         } while (1);
     }
-    delete buffer;
+    delete[] buffer;
     return ret;
 }
 

@@ -26,6 +26,13 @@ CmdLine::~CmdLine()
     tcsetattr(in_fd, TCSANOW, &old_tty_atrr);
 }
 
+void CmdLine::addHints(std::vector<std::string>& cmds)
+{
+    for (vector<string>::iterator c = cmds.begin(); c != cmds.end(); c++) {
+        this->addHints(*c);
+    }
+}
+
 void CmdLine::addHints(string hint)
 {
     std::vector<string>::iterator it;
@@ -80,29 +87,52 @@ void CmdLine::backSpace(int n)
 
 int  CmdLine::compareHints(std::string* possible, std::string* append_str)
 {   
-    int most_len = 65535;
+    int len_min = 65535;
+    int len_max = 0;
     std::vector<string> common;
-    std::vector<string>::iterator it = hints.begin();
+    std::vector<string>::iterator it;
+    int i = 0;
+
     possible->clear();
-    for ( ; it != hints.end(); it++) {
+    for (it = hints.begin(); it != hints.end(); it++) {
         if (it->length() > cmd.length()) {
             if (0 == it->compare(0, cmd.length(), cmd)) {
                 common.push_back(*it);
                 possible->append(*it);
                 possible->append(" ");
-                if (it->length() < most_len) {
-                    most_len = it->length();
+                i++;
+                if (i % 4 == 0) {
+                    possible->append("\n");
                 }
+                if (it->length() < len_min) {
+                    len_min = it->length();
+                } 
+/*                if (it->length() > len_max) {
+                    len_max = it->length();
+                }*/
             }
         }
     }
+
+/*    char* buffer = new char[len_max + 1];
+    possible->clear();
+    for (it = common.begin(); it != common.end(); it++) {
+        i++;
+        memset(buffer, 0x20, len_max + 1);
+        memcpy(buffer, (*it).c_str(), (*it).length());
+        possible->append(string(buffer));
+        if (i % 4 == 0) {
+            possible->append("\n");
+        }
+    }
+    delete[] buffer;*/
     if (common.size() < 2) {
         return common.size();
     }
 
     string common_str("");
     char x = 0, xx = 0;
-    for (int i = cmd.length(); i < most_len; i++) {
+    for (int i = cmd.length(); i < len_min; i++) {
         it = common.begin();
         x = (*it)[i];
         for ( ; it != common.end(); it++) {
@@ -130,6 +160,7 @@ string CmdLine::readLine()
     if (c == '\n') {
         write(out_fd, &c, 1);
         cmd.erase(0, cmd.find_first_not_of(" "));
+        cmd.erase(cmd.find_last_not_of(" \t\n\r") + 1);
         if (cmd.empty()) {
             writeLine(prompt);
         } else if (*(history.end()-1) != cmd){
@@ -223,3 +254,4 @@ string CmdLine::readLine()
     //fsync(out_fd);
     return res;
 }
+
