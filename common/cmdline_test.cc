@@ -27,7 +27,6 @@ int main()
         c = cmd.readLine();
         if (c.size() > 0) {
             //std::cout << c << std::endl;
-            printf("%s \n", c.c_str());
             printf("> ");
             fflush(stdout);
             if (c == "q") {
