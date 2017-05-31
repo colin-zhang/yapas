@@ -7,14 +7,12 @@ file(GLOB SOURCES
   *.c
   )
 
-set(DPDK_RTE_TARGET x86_64-native-linuxapp-gcc)
-
 include_directories(
-  $ENV{DVLP_}/include/dpdk
+  $ENV{DPDK_RTE_TARGET}/include
   src/
   )
 
-link_directories($ENV{DVLP_}/lib)
+link_directories($ENV{DPDK_RTE_TARGET}/lib)
 
 set(DPDK_DRIVERS
   "-lrte_pmd_ixgbe -lrte_pmd_vmxnet3_uio -lrte_pmd_e1000"

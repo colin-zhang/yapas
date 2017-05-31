@@ -1,0 +1,1 @@
+export DPDK_RTE_TARGET=/opt/dpdk-17.05/x86_64-native-linuxapp-gcc
